@@ -2,7 +2,7 @@
 
 ## What was measured, and where
 
-Every number here comes from headless Chromium running **software WebGL2** (SwiftShader) on a machine with no GPU. The harness is `npm run perf` (`e2e/perf.mjs`). It loads a seeded run, enters a combat room, and records per-frame timings for 60 frames at each quality preset.
+Every number here comes from headless Chromium running **software WebGL2** (SwiftShader) on a machine with no GPU. The harness is `npm run perf` (`e2e/perf.mjs`). It loads a seeded run, enters a combat room, and records per-frame timings for 90 frames at each quality preset (`FRAMES` changes the count). The wall-clock rate is computed from those same frames and their elapsed time.
 
 These numbers are useful for two things:
 
@@ -13,27 +13,27 @@ They are **not** a measurement of GPU performance. Software GL runs every shader
 
 ## Results (final build)
 
-Viewport 1920×1080 at device pixel ratio 1, glyph density Standard (8×16 CSS-pixel cells, 240×67 grid), 60 frames per preset:
+Viewport 1920×1080 at device pixel ratio 1, glyph density Standard (8×16 CSS-pixel cells, 240×67 grid), 90 frames per preset:
 
 | Quality | Samples per cell | JS median (ms) | JS p95 (ms) | JS mean (ms) | Wall-clock FPS (software GL) |
 |---|---|---|---|---|---|
-| Low | 2 | 1.9 | 4.3 | 2.4 | 6.1 |
-| Medium | 8 | 1.9 | 4.2 | 2.3 | 6.0 |
-| High | 18 | 2.3 | 5.4 | 2.5 | 5.4 |
+| Low | 2 | 2.3 | 6.1 | 2.8 | 4.7 |
+| Medium | 8 | 2.1 | 5.6 | 2.6 | 4.3 |
+| High | 18 | 2.2 | 5.5 | 2.7 | 4.1 |
 
 Viewport 1280×720, same settings (160×45 grid):
 
 | Quality | JS median (ms) | JS p95 (ms) | Wall-clock FPS (software GL) |
 |---|---|---|---|
-| Low | 1.8 | 4.0 | 11.3 |
-| Medium | 1.8 | 4.0 | 10.4 |
-| High | 2.0 | 3.8 | 10.0 |
+| Low | 2.0 | 4.9 | 9.0 |
+| Medium | 2.0 | 4.1 | 8.0 |
+| High | 2.1 | 3.8 | 7.8 |
 
 Reading the tables:
 
-- JavaScript cost is about 2 ms at both resolutions and does not change with sample density, which is what you expect: the per-frame work is the simulation, the effects and the overlay.
-- Wall-clock rate scales roughly with pixel count (1080p to 720p is about 1.7× faster), which points at the full-screen composite pass. The sample-density setting barely moves it under software GL.
-- Medium and High sample more of each cell, so High costs slightly more JavaScript (the reduction pass is GPU work, but its submission cost is a little higher).
+- JavaScript cost is about 2 ms at both resolutions and does not change measurably with sample density. The per-frame work is the simulation, the effects and the overlay. The differences between presets are within run-to-run noise, a few tenths of a millisecond.
+- Wall-clock rate scales roughly with pixel count (1080p to 720p is about 1.9× faster), which points at the full-screen composite pass. The sample-density setting barely moves it under software GL.
+- An earlier version of this harness divided 90 samples by the time for about 60 frames, which overstated the wall-clock rate by roughly half. The figures above come from the corrected harness.
 
 ## The 60 FPS baseline
 
@@ -57,4 +57,4 @@ npm run dev            # in one terminal
 npm run perf           # in another; uses CHROME_PATH or the pre-installed Chromium
 ```
 
-Set `W=1920 H=1080` and `PRESETS=low,medium,high` as needed. For a GPU measurement, run it in a browser on the baseline machine, check `chrome://gpu` to confirm WebGL2 is hardware-accelerated, and record the wall-clock FPS. The `setSyncGpu` test hook makes each frame wait for the GPU to finish, so the JavaScript timings include GPU execution in that mode.
+Set `W=1920 H=1080`, `PRESETS=low,medium,high` and `FRAMES=90` as needed. For a GPU measurement, run it in a browser on the baseline machine, check `chrome://gpu` to confirm WebGL2 is hardware-accelerated, and record the wall-clock FPS. The `setSyncGpu` test hook makes each frame wait for the GPU to finish, so the JavaScript timings include GPU execution in that mode.

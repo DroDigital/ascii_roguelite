@@ -19,12 +19,23 @@ for (const quality of presets) {
   await page.evaluate(() => window.vellum.startRun(42));
   await page.evaluate(() => window.vellum.takeExit(0));
   await page.waitForTimeout(1500);
-  const before = await page.evaluate(() => window.vellum.frameStats().samples.length);
-  const t0 = Date.now();
-  await page.waitForFunction((n) => window.vellum.frameStats().samples.length >= n + 60, before, { timeout: 600000, polling: 250 });
-  const elapsed = (Date.now() - t0) / 1000;
+  // The timed window: count and time the same frames, so the wall-clock rate matches the statistics.
+  const measured = await page.evaluate(
+    (count) =>
+      new Promise((resolve) => {
+        const first = window.vellum.frameStats().samples.length;
+        const t0 = performance.now();
+        const poll = () => {
+          const samples = window.vellum.frameStats().samples.slice(first);
+          if (samples.length < count) return requestAnimationFrame(poll);
+          return resolve({ samples, elapsedMs: performance.now() - t0 });
+        };
+        requestAnimationFrame(poll);
+      }),
+    frames,
+  );
   const stats = await page.evaluate(() => window.vellum.frameStats());
-  const s = stats.samples.slice(-frames).sort((a, b) => a - b);
+  const s = [...measured.samples].sort((a, b) => a - b);
   const median = s[Math.floor(s.length / 2)];
   const p95 = s[Math.floor(s.length * 0.95)];
   const mean = s.reduce((a, b) => a + b, 0) / s.length;
@@ -37,7 +48,7 @@ for (const quality of presets) {
     p95Ms: +p95.toFixed(1),
     meanMs: +mean.toFixed(1),
     proxyFps: +(1000 / median).toFixed(1),
-    wallFps: +(s.length / elapsed).toFixed(1),
+    wallFps: +(s.length / (measured.elapsedMs / 1000)).toFixed(1),
     errors: errors.length,
   });
   await page.close();
