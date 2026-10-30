@@ -4,6 +4,7 @@ import { Battle, type StepInput } from '../src/sim/battle';
 import { ENEMY_DEFS } from '../src/sim/enemies';
 import { baseMods } from '../src/sim/mods';
 import { PLAYER_TUNING } from '../src/sim/player';
+import { makeProjectile } from '../src/sim/projectiles';
 import { generateLayout } from '../src/world/layout';
 import type { Layout } from '../src/world/tiles';
 import { T } from '../src/world/tiles';
@@ -353,5 +354,47 @@ describe('doors', () => {
     });
     runSeconds(b, 0.1, () => idle());
     expect(b.grid.doorsLocked).toBe(false);
+  });
+});
+
+describe('cover', () => {
+  it('a glaive swing does not reach an enemy on the far side of a pillar', () => {
+    const swingAt = (pillared: boolean): number => {
+      const layout = generateLayout('nave', mulberry32(71), { entrySide: 'W', exitCount: 2 });
+      const cx = Math.floor(layout.w / 2);
+      const cz = Math.floor(layout.h / 2);
+      if (pillared) layout.tiles[cz * layout.w + cx + 1] = T.PILLAR;
+      const b = new Battle({ layout, rng: mulberry32(170), mods: baseMods(), weapon: 'glaive' });
+      b.player.x = cx + 0.5;
+      b.player.z = cz + 0.5;
+      const husk = b.addEnemy('husk', cx + 2.4, cz + 0.5);
+      // Held in place, so the enemy cannot walk round the pillar during the swing.
+      husk.setStage('stun');
+      runSeconds(b, 0.5, (i) => faceAndFire(b, husk.x, husk.z, i === 0));
+      return husk.hp;
+    };
+    expect(swingAt(true)).toBe(ENEMY_DEFS.husk.hp);
+    expect(swingAt(false)).toBeLessThan(ENEMY_DEFS.husk.hp);
+  });
+});
+
+describe('room clear', () => {
+  it('a player killed in the same step as the last enemy does not clear the room', () => {
+    const b = makeBattle(71, 'nave');
+    centreOnPlayer(b);
+    const husk = b.addEnemy('husk', b.player.x - 1, b.player.z);
+    const lunge = ENEMY_DEFS.husk.attacks.find((a) => a.id === 'lunge');
+    husk.attack = lunge ?? null;
+    husk.setStage('active');
+    husk.dirX = 1;
+    husk.dirZ = 0;
+    husk.hitDone = false;
+    // The lunge is lethal, and a player bolt already in flight kills the husk later in the same step.
+    b.player.hp = 1;
+    b.projectiles.push(makeProjectile({ owner: 'player', kind: 'bolt', x: husk.x, z: husk.z, vx: 0, vz: 0, life: 1, radius: 0.16, damage: 99 }));
+    b.step(DT, idle());
+    expect(b.player.alive).toBe(false);
+    expect(husk.alive).toBe(false);
+    expect(b.grid.doorsLocked).toBe(true);
   });
 });

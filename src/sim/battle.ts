@@ -231,6 +231,8 @@ export class Battle {
       const d = Math.max(1e-4, Math.hypot(dx, dz));
       if (d > spec.range + e.def.radius) continue;
       if ((dx * forward.x + dz * forward.z) / d < cosHalf) continue;
+      // A pillar or wall between the two stops the blade, as it stops the enemy's own attacks.
+      if (this.grid.segmentBlocked(this.player.x, this.player.z, e.x, e.z)) continue;
       this.glaive.hitIds.add(e.id);
       const base = spec.damage * this.mods.glaive.damageMul * this.mods.damageMul * damageMul;
       this.hitEnemy(e, base, {
@@ -725,7 +727,8 @@ export class Battle {
   }
 
   private checkRoomState(): void {
-    if (!this.cleared && this.roomClear) {
+    // A player who dies in the same step as the last enemy does not clear the room, so the death stands.
+    if (!this.cleared && this.roomClear && this.player.alive) {
       this.cleared = true;
       this.grid.setDoorsLocked(false);
       this.emit({ type: 'roomCleared' });

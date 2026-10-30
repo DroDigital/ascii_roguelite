@@ -39,8 +39,12 @@ function glyphConst(name: string, ch: string): string {
  * with edge and ramp rules, and smooths it over time so structure does not flicker.
  *
  * Outputs:
- *   outState  (glyph index, smoothed brightness, edge strength, surface family)
+ *   outState  (glyph index / 255, smoothed brightness, edge strength, surface family / 255)
  *   outColor  (sRGB cell colour, smoothed brightness)
+ *
+ * The glyph index and family are stored divided by 255. Without float colour
+ * buffers the targets are unsigned bytes, which clamp anything above 1, so the
+ * indices would collapse to a single glyph there. Readers multiply back by 255.
  */
 export function reductionFragment(sampleX: number): string {
   const sampleY = sampleX * 2;
@@ -160,8 +164,8 @@ void main() {
   if (nLen > 1e-4) upness = (uViewToWorld * (normalSum / nLen)).y;
 
   vec4 prev = texelFetch(tPrev, cell, 0);
-  float prevGlyph = floor(prev.r + 0.5);
-  int prevFam = int(floor(prev.a + 0.5));
+  float prevGlyph = floor(prev.r * 255.0 + 0.5);
+  int prevFam = int(floor(prev.a * 255.0 + 0.5));
   bool reset = uReset > 0.5;
 
   float S = reset ? level : mix(prev.g, level, 1.0 - exp(-uSmoothRate * uDt));
@@ -205,7 +209,7 @@ void main() {
     glyph = rampGlyph(fam, idx);
   }
 
-  outState = vec4(glyph, S, edgeMax, float(fam));
+  outState = vec4(glyph / 255.0, S, edgeMax, float(fam) / 255.0);
   outColor = vec4(srgb, S);
 }
 `;
@@ -268,7 +272,7 @@ void main() {
 
   vec4 st = texelFetch(tState, cell, 0);
   vec4 cc4 = texelFetch(tCellColor, cell, 0);
-  float cov = glyphCoverage(floor(st.r + 0.5), f);
+  float cov = glyphCoverage(floor(st.r * 255.0 + 0.5), f);
   vec3 col = cc4.rgb * cov;
 
   vec3 nb = texelFetch(tCellColor, clamp(cell + ivec2(1, 0), ivec2(0), maxCell), 0).rgb
