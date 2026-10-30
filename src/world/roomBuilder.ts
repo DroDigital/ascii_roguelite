@@ -20,6 +20,9 @@ const COLORS = {
   gate: 0xff5a3c,
 } as const;
 
+/** Door panel opacity. Entries stay fainter than exits, and every panel dims while its doors are locked. */
+const DOOR_OPACITY = { entry: 0.22, exit: 0.55, locked: 0.12 } as const;
+
 /** Shared materials. Every room reuses them, so a room costs only a few draw calls. */
 const materialCache = new Map<string, THREE.Material>();
 function mat(key: string, make: () => THREE.Material): THREE.Material {
@@ -41,8 +44,8 @@ export const roomMaterials = {
     mat('altar', () => new THREE.MeshLambertMaterial({ color: COLORS.altar, emissive: COLORS.altarGlow, emissiveIntensity: 0.7 })),
   wax: () => mat('wax', () => new THREE.MeshLambertMaterial({ color: COLORS.wax })),
   flame: () => mat('flame', () => new THREE.MeshBasicMaterial({ color: COLORS.flame })),
-  doorEntry: () => mat('doorEntry', () => new THREE.MeshBasicMaterial({ color: COLORS.ash, transparent: true, opacity: 0.22 })),
-  doorExit: () => mat('doorExit', () => new THREE.MeshBasicMaterial({ color: COLORS.doorExit, transparent: true, opacity: 0.55 })),
+  doorEntry: () => mat('doorEntry', () => new THREE.MeshBasicMaterial({ color: COLORS.ash, transparent: true, opacity: DOOR_OPACITY.entry })),
+  doorExit: () => mat('doorExit', () => new THREE.MeshBasicMaterial({ color: COLORS.doorExit, transparent: true, opacity: DOOR_OPACITY.exit })),
   gate: () => mat('gate', () => new THREE.MeshBasicMaterial({ color: COLORS.gate, transparent: true, opacity: 0.8 })),
 };
 
@@ -196,7 +199,8 @@ export function buildRoom(layout: Layout): BuiltRoom {
     setDoorsLocked(locked: boolean): void {
       for (const d of doorMeshes) {
         d.gate.visible = locked;
-        (d.panel.material as THREE.MeshBasicMaterial).opacity = locked ? 0.12 : 0.55;
+        const open = d.door.role === 'entry' ? DOOR_OPACITY.entry : DOOR_OPACITY.exit;
+        (d.panel.material as THREE.MeshBasicMaterial).opacity = locked ? DOOR_OPACITY.locked : open;
       }
     },
     dispose(): void {

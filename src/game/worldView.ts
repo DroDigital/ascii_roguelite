@@ -72,6 +72,8 @@ export class WorldView {
 
   /** Mirrors the battle onto the scene. Call once per display frame, after the sim steps. */
   sync(battle: Battle, dt: number, now: number, eye: { x: number; z: number }): void {
+    // The gates follow the simulation's lock every frame, so they cannot drift from it.
+    this.room?.setDoorsLocked(battle.grid.doorsLocked);
     const alive = new Set<number>();
     for (const e of battle.enemies) {
       alive.add(e.id);

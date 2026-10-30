@@ -332,3 +332,26 @@ describe('burning', () => {
     expect(husk.hp).toBeCloseTo(afterHit - 12, 0);
   });
 });
+
+describe('doors', () => {
+  it('report locked while enemies remain, and open once the room is clear', () => {
+    const b = makeBattle(71, 'nave');
+    centreOnPlayer(b);
+    const husk = b.addEnemy('husk', b.player.x + 3, b.player.z);
+    settle(b);
+    expect(b.grid.doorsLocked).toBe(true);
+    b.hitEnemy(husk, 999, {
+      source: 'test',
+      heavy: false,
+      knockback: 0,
+      dirX: 0,
+      dirZ: 0,
+      breakArmour: false,
+      tearLayer: false,
+      ignite: false,
+      stagger: false,
+    });
+    runSeconds(b, 0.1, () => idle());
+    expect(b.grid.doorsLocked).toBe(false);
+  });
+});

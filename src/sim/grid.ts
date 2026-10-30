@@ -34,6 +34,11 @@ export class WorldGrid {
     this.field = null;
   }
 
+  /** True while the room's doors are locked against the player. */
+  get doorsLocked(): boolean {
+    return this.doorTiles.some((i) => this.locked[i] === 1);
+  }
+
   private index(tx: number, ty: number): number {
     return ty * this.w + tx;
   }

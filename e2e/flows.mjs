@@ -63,12 +63,37 @@ await page.evaluate(() => window.vellum.takeExit(0));
 await page.evaluate(() => window.vellum.advance(2));
 const combat = await page.evaluate(() => window.vellum.state());
 check('a combat room loads with enemies', combat.battle?.enemies.length > 0, `enemies ${combat.battle?.enemies.length}`);
+// Locked doors show their gates. Two frames pass first so the view has synced the battle's lock state.
+const gates = await page.evaluate(
+  () =>
+    new Promise((resolve) =>
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          const isGate = (o) => o.geometry?.parameters?.width === 0.08 && o.geometry?.parameters?.height === 2.4;
+          const room = window.vellum.app.world.currentRoom;
+          resolve({
+            locked: window.vellum.app.battle.grid.doorsLocked,
+            visible: room.group.children.filter((o) => isGate(o) && o.visible).length,
+          });
+        }),
+      ),
+    ),
+);
+check('locked doors show their gates', gates.locked && gates.visible > 0, `locked ${gates.locked}, visible gates ${gates.visible}`);
 
 // Finish the run as a loss, then restart and confirm the Quill is now unlocked.
 await page.evaluate(() => window.vellum.finish(false));
 await page.waitForTimeout(250);
 check('the end screen appears after a finished run', (await page.evaluate(() => window.vellum.state().state)) === 'end');
 await page.screenshot({ path: 'artifacts/flow-end.png' });
+// Keyboard: Enter activates the focused button, so Title is reachable without the mouse.
+await page.keyboard.press('ArrowDown');
+await page.keyboard.press('Enter');
+await page.waitForFunction(() => window.vellum.state().state === 'title', null, { timeout: 5000 }).catch(() => {});
+check('Enter on Title returns to the title', (await page.evaluate(() => window.vellum.state().state)) === 'title');
+await page.evaluate(() => window.vellum.startRun(11));
+await page.evaluate(() => window.vellum.finish(false));
+await page.waitForTimeout(250);
 await page.getByRole('button', { name: /Restart run/ }).click();
 await page.waitForTimeout(200);
 check('restart begins a fresh run', (await page.evaluate(() => window.vellum.state().state)) === 'run');

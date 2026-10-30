@@ -471,7 +471,7 @@ export class App {
         if (this.endTimer <= 0) this.finishRun(this.endingWon);
         break;
       case 'end':
-        if (snap.confirmJust || snap.restartJust) {
+        if (snap.restartJust) {
           this.input.captureMouse();
           this.startRun();
         }
