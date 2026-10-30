@@ -102,7 +102,9 @@ export class InputManager {
 
   /** Asks the browser to capture the mouse for look. Must run from a user gesture. */
   captureMouse(): void {
-    if (!this.locked) this.target.requestPointerLock?.();
+    if (this.locked) return;
+    // Browsers refuse requests made outside a user gesture. That refusal is expected, so it is not an error.
+    void Promise.resolve(this.target.requestPointerLock?.()).catch(() => undefined);
   }
 
   releaseMouse(): void {

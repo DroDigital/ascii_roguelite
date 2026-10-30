@@ -8,6 +8,7 @@ import { Battle, type BattleEvent, type StepInput } from '../sim/battle';
 import { Boss } from '../sim/boss';
 import { type Enemy } from '../sim/enemies';
 import { FirstPersonView } from '../sim/fpView';
+import { EdgeBuffer, type Edges } from '../core/edges';
 import { type Mods } from '../sim/mods';
 import { glaiveSpec } from '../sim/weapons';
 import { WorldView } from '../game/worldView';
@@ -87,6 +88,8 @@ export class App {
   private altarUsed = false;
   private roomKills = 0;
   private readonly projectScratch = new THREE.Vector3();
+  /** One-shot presses waiting for a simulation step to take them. */
+  private readonly edges = new EdgeBuffer();
 
   constructor(canvas: HTMLCanvasElement, ascii: AsciiConfig) {
     this.canvas = canvas;
@@ -210,12 +213,15 @@ export class App {
     this.audio.onRoomStart(plan.option.kind);
     this.acc = 0;
     this.hitStop = 0;
+    this.edges.clear();
   }
 
   private setState(next: AppState): void {
     this.state = next;
     this.hud.show(HUD_STATES.includes(next));
     if (!MENU_STATES.includes(next)) this.screens.hide();
+    // Menus need the cursor, so release pointer lock whenever gameplay is not the active state.
+    if (next !== 'run' && next !== 'ending') this.input.releaseMouse();
   }
 
   showTitle(): void {
@@ -288,6 +294,7 @@ export class App {
   /** Opens the pause menu. Releases the mouse and quiets the ambience. */
   pause(): void {
     if (this.state !== 'run') return;
+    this.edges.clear();
     this.input.releaseMouse();
     this.audio.setAmbienceDucked(true);
     this.showPause();
@@ -501,6 +508,7 @@ export class App {
       this.showAltar();
       return;
     }
+    this.edges.record(snap);
     this.acc += dt;
     let steps = 0;
     while (this.acc >= FIXED_DT && steps < MAX_STEPS_PER_FRAME) {
@@ -510,7 +518,7 @@ export class App {
         this.hitStop -= FIXED_DT;
         continue;
       }
-      battle.step(FIXED_DT, this.stepInput(snap, steps === 1));
+      battle.step(FIXED_DT, this.stepInput(snap, this.edges.take()));
       if (this.debugGod) battle.player.hp = battle.player.maxHp;
       this.simTime += FIXED_DT;
       this.runTime += FIXED_DT;
@@ -530,19 +538,19 @@ export class App {
     return this.layout.altars.some((a) => Math.hypot(a.x + 0.5 - battle.player.x, a.y + 0.5 - battle.player.z) <= ALTAR_REACH);
   }
 
-  private stepInput(snap: InputSnapshot, first: boolean): StepInput {
+  private stepInput(snap: InputSnapshot, edges: Edges): StepInput {
     return {
       move: {
         moveX: snap.moveX,
         moveY: snap.moveY,
         forward: this.view.forward(),
         right: this.view.right(),
-        dodgePressed: first && snap.dodgeJust,
+        dodgePressed: edges.dodge,
       },
-      fireJust: first && snap.fireJust,
+      fireJust: edges.fire,
       fireHeld: snap.fireHeld,
       tearHeld: snap.tearHeld,
-      tearReleased: first && snap.tearReleased,
+      tearReleased: edges.tearRelease,
     };
   }
 

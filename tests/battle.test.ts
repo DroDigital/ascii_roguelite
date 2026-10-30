@@ -202,3 +202,59 @@ describe('spawning', () => {
     expect(b.pending.length).toBe(0);
   });
 });
+
+describe('piercing', () => {
+  /** Fires one quill bolt at two husks lined up in front of the player, and returns their health afterwards. */
+  function shootLine(pierce: number): { near: number; far: number } {
+    const layout = generateLayout('nave', mulberry32(1), { entrySide: null, exitCount: 2 });
+    const mods = baseMods();
+    mods.quill.pierce = pierce;
+    const b = new Battle({ layout, rng: mulberry32(2), mods, weapon: 'quill' });
+    const near = b.addEnemy('husk', b.player.x + 2.3, b.player.z);
+    const far = b.addEnemy('husk', b.player.x + 3.6, b.player.z);
+    const forward = { x: 1, z: 0 };
+    b.step(DT, idle(forward, { fireHeld: true }));
+    runSeconds(b, 0.5, () => idle(forward));
+    return { near: near.hp, far: far.hp };
+  }
+
+  it('a plain quill bolt stops at the first enemy it hits', () => {
+    const r = shootLine(0);
+    expect(r.near).toBeCloseTo(25);
+    expect(r.far).toBe(34);
+  });
+
+  it('Piercing Sigil lets a bolt pass through the first enemy', () => {
+    const r = shootLine(1);
+    expect(r.near).toBeCloseTo(25);
+    expect(r.far).toBeCloseTo(25);
+  });
+});
+
+describe('ink famine', () => {
+  it('stops health motes from dropping, so healing comes only from Mend', () => {
+    const motesAfterKills = (inkFamine: boolean): number => {
+      const layout = generateLayout('hall-of-hooks', mulberry32(3), { entrySide: 'W', exitCount: 2 });
+      const mods = baseMods();
+      mods.inkFamine = inkFamine;
+      const b = new Battle({ layout, rng: mulberry32(4), mods, weapon: 'glaive' });
+      for (let i = 0; i < 60; i++) {
+        const e = b.addEnemy('husk', 3 + (i % 5), 5);
+        b.hitEnemy(e, 999, {
+          source: 'test',
+          heavy: false,
+          knockback: 0,
+          dirX: 0,
+          dirZ: 0,
+          breakArmour: false,
+          tearLayer: false,
+          ignite: false,
+          stagger: false,
+        });
+      }
+      return b.pickups.filter((p) => p.kind === 'mote').length;
+    };
+    expect(motesAfterKills(false)).toBeGreaterThan(0);
+    expect(motesAfterKills(true)).toBe(0);
+  });
+});

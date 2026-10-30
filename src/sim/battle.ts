@@ -454,7 +454,8 @@ export class Battle {
     const [lo, hi] = e.def.shards;
     const amount = lo + Math.floor(this.rng() * (hi - lo + 1));
     this.pickups.push({ kind: 'shard', x: e.x, z: e.z, amount: Math.max(1, Math.round(amount * this.mods.shardMul)), life: 30 });
-    if (this.rng() < e.def.moteChance) this.pickups.push({ kind: 'mote', x: e.x, z: e.z, amount: 8, life: 30 });
+    // Ink Famine: healing comes only from Mend, so enemies drop no health motes.
+    if (!this.mods.inkFamine && this.rng() < e.def.moteChance) this.pickups.push({ kind: 'mote', x: e.x, z: e.z, amount: 8, life: 30 });
     if (burning && (this.mods.kindling || this.mods.pyre)) {
       const radius = this.mods.pyre ? 3.2 : 2.5;
       this.emit({ type: 'kindlingBlast', x: e.x, z: e.z, radius });
@@ -610,7 +611,7 @@ export class Battle {
       player: (p) => this.hurtPlayer(p.damage, p.x, p.z, 0.4),
       enemy: (p, id) => {
         const e = this.enemies.find((en) => en.id === id);
-        if (!e || !e.alive) return false;
+        if (!e || !e.alive) return;
         const fragment = p.kind === 'fragment';
         this.hitEnemy(e, p.damage, {
           source: fragment ? 'fragment' : 'quill',
@@ -623,7 +624,6 @@ export class Battle {
           ignite: this.mods.glaive.ignite && fragment,
           stagger: false,
         });
-        return true;
       },
       targetAt: (id) => {
         const e = this.enemies.find((en) => en.id === id && en.alive);

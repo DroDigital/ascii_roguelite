@@ -28,8 +28,8 @@ export interface Projectile {
 export interface ProjectileHits {
   /** Player hit by an enemy projectile. Return true if the hit landed. */
   player: (p: Projectile) => boolean;
-  /** Enemy hit by a player projectile. Return true if the projectile should stop. */
-  enemy: (p: Projectile, enemyId: number, x: number, z: number) => boolean;
+  /** Enemy hit by a player projectile. Pierce decides whether the projectile carries on. */
+  enemy: (p: Projectile, enemyId: number, x: number, z: number) => void;
   /** Enemy position lookup for homing. Returns null once the target is gone. */
   targetAt: (id: number) => { x: number; z: number } | null;
   /** Enemies to test against player bolts. */
@@ -109,8 +109,8 @@ export function updateProjectiles(list: Projectile[], dt: number, grid: WorldGri
           if (p.hitIds.has(e.id)) continue;
           if (Math.hypot(e.x - p.x, e.z - p.z) > e.radius + p.radius) continue;
           p.hitIds.add(e.id);
-          const stop = hits.enemy(p, e.id, p.x, p.z);
-          if (stop || p.pierce <= 0) {
+          hits.enemy(p, e.id, p.x, p.z);
+          if (p.pierce <= 0) {
             p.done = true;
             hits.impact(p);
             stopped = true;

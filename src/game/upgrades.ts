@@ -232,6 +232,7 @@ export function computeMods(owned: readonly UpgradeId[], run: RunModifiers = NO_
   m.maxHp += run.boonMaxHp - run.attunePenalty;
   m.dodgeCharges += run.boonDodge;
   m.shardMul *= run.inkFamine ? 1.4 : 1;
+  m.inkFamine = run.inkFamine;
   return m;
 }
 

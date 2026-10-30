@@ -52,6 +52,8 @@ export interface Mods {
     mirrorStep: boolean;
   };
   shardMul: number;
+  /** Ink Famine: no healing except Mend, and no health motes drop. */
+  inkFamine: boolean;
 }
 
 export function baseMods(): Mods {
@@ -83,5 +85,6 @@ export function baseMods(): Mods {
     },
     dodge: { cooldownMul: 1, distanceMul: 1, trailDamage: 0, mirrorStep: false },
     shardMul: 1,
+    inkFamine: false,
   };
 }

@@ -516,7 +516,8 @@ export class Enemy {
  */
 export function applyArmourRule(enemy: Enemy, base: number, coreMul: number): number {
   if (enemy.stage === 'dead' || enemy.stage === 'transition') return 0;
-  const exposed = enemy.armor <= 0 || enemy.coreExposed;
+  // A core is exposed only once armour that the enemy had has been stripped away. Enemies born without armour, such as husks, never take the bonus.
+  const exposed = (enemy.def.armor > 0 && enemy.armor <= 0) || enemy.coreExposed;
   const armourMul = enemy.armor > 0 ? 0.35 : 1;
   const coreFactor = exposed ? coreMul : 1;
   const stunFactor = enemy.stage === 'stun' ? 1.25 : 1;
