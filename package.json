@@ -1,0 +1,29 @@
+{
+  "name": "vellum",
+  "version": "0.1.0",
+  "private": true,
+  "description": "VELLUM: a 3D ASCII-rendered action roguelite (vertical slice).",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "e2e": "node e2e/flows.mjs",
+    "autoplay": "node e2e/autoplay.mjs 42 1",
+    "shot": "node e2e/shot.mjs",
+    "perf": "node e2e/perf.mjs"
+  },
+  "dependencies": {
+    "@fontsource/ibm-plex-mono": "5.3.0",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@types/three": "0.186.0",
+    "playwright-core": "1.63.0",
+    "typescript": "5.9.3",
+    "vite": "8.3.4",
+    "vitest": "5.0.4"
+  }
+}
