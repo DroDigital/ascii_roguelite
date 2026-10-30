@@ -258,3 +258,27 @@ describe('ink famine', () => {
     expect(motesAfterKills(true)).toBe(0);
   });
 });
+
+describe('corpses', () => {
+  it('leaves the battle once the collapse has finished', () => {
+    const b = makeBattle(71);
+    const husk = b.addEnemy('husk', b.player.x + 3, b.player.z);
+    settle(b);
+    b.hitEnemy(husk, 999, {
+      source: 'test',
+      heavy: false,
+      knockback: 0,
+      dirX: 0,
+      dirZ: 0,
+      breakArmour: false,
+      tearLayer: false,
+      ignite: false,
+      stagger: false,
+    });
+    expect(husk.alive).toBe(false);
+    runSeconds(b, 0.5, () => idle());
+    expect(b.enemies).toContain(husk);
+    runSeconds(b, 0.8, () => idle());
+    expect(b.enemies).not.toContain(husk);
+  });
+});

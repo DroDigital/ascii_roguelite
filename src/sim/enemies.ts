@@ -500,6 +500,11 @@ export class Enemy {
     }
   }
 
+  /** Advances the collapse timer of a dead enemy, so its body leaves the battle once the collapse ends. */
+  tickDead(dt: number): void {
+    if (this.stage === 'dead') this.t += dt;
+  }
+
   /** Marks the enemy dead. Returns true if this call was the one that killed it. */
   die(): boolean {
     if (this.stage === 'dead') return false;

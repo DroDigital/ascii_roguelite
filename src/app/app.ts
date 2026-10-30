@@ -322,6 +322,8 @@ export class App {
     const director = this.director;
     if (!director) return;
     const status = director.roomCleared(this.roomKills);
+    // The room's kills are now credited to the run, so they must not be counted again.
+    this.roomKills = 0;
     this.audio.onRoomCleared();
     if (status === 'upgrade') {
       this.hud.flash(director.rarePicks > 0 ? 'A rare gift awaits' : 'Choose an upgrade', 'amber', 2.5);
@@ -406,15 +408,15 @@ export class App {
     const director = this.director;
     if (!director) return;
     const time = this.runTime;
-    const summary: RunSummary = director.summary(won, time);
+    const summary: RunSummary = director.summary(won, time, this.roomKills);
     const outcome: RunOutcome = {
       won,
       time,
-      kills: director.kills,
+      kills: summary.kills,
       upgrades: [...director.owned],
       combos: summary.combos,
-      visitedCistern: this.altarUsed,
-      clearedReliquary: director.stage >= 4,
+      visitedCistern: director.cisternVisited,
+      clearedReliquary: director.reliquaryCleared,
       reachedBoss: director.stage >= 5,
     };
     const applied = applyOutcome(this.progress, outcome);

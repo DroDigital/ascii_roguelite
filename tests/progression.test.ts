@@ -258,3 +258,40 @@ describe('local save', () => {
     expect(loadProgress().runs).toBe(0);
   });
 });
+
+describe('run outcome flags', () => {
+  it('counts the reliquary as cleared only once its room is won', () => {
+    const d = new RunDirector({ seed: 8, weapon: 'glaive', boon: null, modifiers: [] });
+    d.begin();
+    for (let stage = 1; stage <= 3; stage++) {
+      d.enter(0, d.nextOptions[0]);
+      d.roomCleared(2);
+      d.pickUpgrade(d.offers[0]);
+    }
+    d.enter(0, d.nextOptions[0]);
+    expect(d.plan?.option.kind).toBe('reliquary');
+    expect(d.reliquaryCleared).toBe(false);
+    d.roomCleared(3);
+    expect(d.reliquaryCleared).toBe(true);
+  });
+
+  it('marks the cistern visited on entry, without needing the altar', () => {
+    const d = new RunDirector({ seed: 10, weapon: 'glaive', boon: null, modifiers: [] });
+    d.begin();
+    d.enter(0, d.nextOptions[0]);
+    expect(d.cisternVisited).toBe(false);
+    d.roomCleared(2);
+    d.pickUpgrade(d.offers[0]);
+    d.enter(0, d.nextOptions[1]);
+    expect(d.plan?.option.kind).toBe('cistern');
+    expect(d.cisternVisited).toBe(true);
+  });
+
+  it('includes kills from a room that was never cleared in the summary', () => {
+    const d = new RunDirector({ seed: 9, weapon: 'glaive', boon: null, modifiers: [] });
+    d.begin();
+    d.roomCleared(2);
+    expect(d.summary(false, 10, 3).kills).toBe(5);
+    expect(d.summary(false, 10).kills).toBe(2);
+  });
+});

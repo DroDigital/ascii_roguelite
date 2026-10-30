@@ -59,6 +59,10 @@ export class RunDirector {
   lastCombos: string[] = [];
   kills = 0;
   roomsCleared = 0;
+  /** The reliquary room has been won, as opposed to merely entered. */
+  reliquaryCleared = false;
+  /** A cistern room has been entered. This is the Scribe's Pouch unlock. */
+  cisternVisited = false;
   mods: Mods;
   plan: RoomPlan | null = null;
   /** Upgrade picks still owed after a reliquary or an attuned cistern. */
@@ -105,6 +109,7 @@ export class RunDirector {
     const exit = exitDoor(this.plan.layout, exitIndex);
     const entry: Side = oppositeSide(exit.side);
     this.stage += 1;
+    if (option.kind === 'cistern') this.cisternVisited = true;
     this.plan = planRoom(this.stage, option, entry, this.rng);
     this.status = 'playing';
     return this.plan;
@@ -132,6 +137,7 @@ export class RunDirector {
     if (kind === 'boss') {
       this.status = 'victory';
     } else if (kind === 'reliquary') {
+      this.reliquaryCleared = true;
       this.rarePicks = 1 + (this.runMods.gildedPath ? 1 : 0);
       this.offers = offerUpgrades(this.rng, this.owned, 3, 1, true);
       this.status = 'upgrade';
@@ -221,12 +227,13 @@ export class RunDirector {
     };
   }
 
-  summary(won: boolean, time: number): RunSummary {
+  /** `uncreditedKills` are kills from the room in progress, which has not been cleared yet. */
+  summary(won: boolean, time: number, uncreditedKills = 0): RunSummary {
     return {
       won,
       seed: this.config.seed,
       time,
-      kills: this.kills,
+      kills: this.kills + uncreditedKills,
       roomsCleared: this.roomsCleared,
       upgrades: [...this.owned],
       combos: activeCombos(this.owned),

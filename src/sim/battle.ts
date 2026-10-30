@@ -481,7 +481,10 @@ export class Battle {
   private updateEnemies(dt: number): void {
     const flow = this.grid.flowTo(Math.floor(this.player.x), Math.floor(this.player.z));
     for (const e of this.enemies) {
-      if (!e.alive) continue;
+      if (!e.alive) {
+        e.tickDead(dt);
+        continue;
+      }
       if (e.burnT > 0) {
         e.hp -= e.burnDps * dt;
         if (e.hp <= 0) {
