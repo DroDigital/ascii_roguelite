@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { mulberry32 } from '../src/core/rng';
 import { Battle, type StepInput } from '../src/sim/battle';
+import { ENEMY_DEFS } from '../src/sim/enemies';
 import { baseMods } from '../src/sim/mods';
 import { PLAYER_TUNING } from '../src/sim/player';
 import { generateLayout } from '../src/world/layout';
@@ -47,6 +48,12 @@ function runSeconds(b: Battle, seconds: number, input: (step: number) => StepInp
 /** Clears spawn-in time so enemies are active and can act immediately. */
 function settle(b: Battle): void {
   runSeconds(b, 1, () => idle());
+}
+
+/** Puts the player in the middle of the room, which is open floor in every layout transform. */
+function centreOnPlayer(b: Battle): void {
+  b.player.x = Math.floor(b.layout.w / 2) + 0.5;
+  b.player.z = Math.floor(b.layout.h / 2) + 0.5;
 }
 
 describe('pursuit and damage', () => {
@@ -280,5 +287,48 @@ describe('corpses', () => {
     expect(b.enemies).toContain(husk);
     runSeconds(b, 0.8, () => idle());
     expect(b.enemies).not.toContain(husk);
+  });
+});
+
+describe('charge', () => {
+  it('lands when the elite reaches the player, not when it first comes near', () => {
+    const b = makeBattle(71, 'nave');
+    centreOnPlayer(b);
+    const charge = ENEMY_DEFS.elite.attacks.find((a) => a.id === 'charge');
+    // Starts 2.3 behind the player, so its strike point is 1.3 short of the player and closes by 0.15 a step.
+    const elite = b.addEnemy('elite', b.player.x - 2.3, b.player.z);
+    elite.attack = charge ?? null;
+    elite.setStage('active');
+    elite.dirX = 1;
+    elite.dirZ = 0;
+    elite.hitDone = false;
+    const start = b.player.hp;
+    runSeconds(b, 0.5, () => idle());
+    expect(b.player.hp).toBeLessThan(start);
+  });
+});
+
+describe('burning', () => {
+  it('stops three seconds after the last ignition', () => {
+    const b = makeBattle(71, 'nave');
+    centreOnPlayer(b);
+    const husk = b.addEnemy('husk', b.player.x + 3, b.player.z);
+    settle(b);
+    b.hitEnemy(husk, 1, {
+      source: 'test',
+      heavy: false,
+      knockback: 0,
+      dirX: 0,
+      dirZ: 0,
+      breakArmour: false,
+      tearLayer: false,
+      ignite: true,
+      stagger: false,
+    });
+    const afterHit = husk.hp;
+    runSeconds(b, 5, () => idle());
+    expect(husk.burnT).toBe(0);
+    // Four damage a second for the three seconds of burn, and nothing after.
+    expect(husk.hp).toBeCloseTo(afterHit - 12, 0);
   });
 });

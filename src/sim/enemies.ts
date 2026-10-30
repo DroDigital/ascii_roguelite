@@ -1,5 +1,5 @@
 import type { WorldGrid } from './grid';
-import type { PlayerState } from './player';
+import { PLAYER_TUNING, type PlayerState } from './player';
 
 export type EnemyKind = 'husk' | 'acolyte' | 'bulwark' | 'elite' | 'boss';
 
@@ -158,6 +158,8 @@ export const COLLAPSE_TIME = 1.1;
 export const TRANSITION_TIME = 1.4;
 export const CHARGE_SPEED = 9;
 export const LUNGE_SPEED = 9;
+/** Radius of a front strike, around the point the enemy reaches out to. */
+const FRONT_HIT_RADIUS = 0.55;
 
 /** Events the battle turns into hits, projectiles, hazards, audio and effects. */
 export type EnemyEvent =
@@ -486,9 +488,10 @@ export class Enemy {
     const { player } = ctx;
     const fx = this.x + this.dirX * reach;
     const fz = this.z + this.dirZ * reach;
-    if (Math.hypot(player.x - fx, player.z - fz) <= 0.55 + this.def.radius) {
+    // The same reach the battle checks when it applies the hit, so a strike that is spent always lands.
+    if (Math.hypot(player.x - fx, player.z - fz) <= FRONT_HIT_RADIUS + PLAYER_TUNING.radius) {
       this.hitDone = true;
-      out.push({ type: 'hitFront', enemy: this, x: fx, z: fz, radius: 0.55, damage, knockback });
+      out.push({ type: 'hitFront', enemy: this, x: fx, z: fz, radius: FRONT_HIT_RADIUS, damage, knockback });
     }
   }
 

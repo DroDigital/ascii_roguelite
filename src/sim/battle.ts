@@ -486,6 +486,7 @@ export class Battle {
         continue;
       }
       if (e.burnT > 0) {
+        e.burnT = Math.max(0, e.burnT - dt);
         e.hp -= e.burnDps * dt;
         if (e.hp <= 0) {
           this.killEnemy(e);
