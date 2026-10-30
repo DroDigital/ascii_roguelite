@@ -188,4 +188,4 @@ WebAudio synthesis, all cues distinct in timbre:
 
 ## 14. Known limits
 
-Recorded in README.md once the build is complete.
+Recorded in README.md. The main ones: frame rate on real hardware is unverified (software GL only); pointer lock and audio were not checked by hand; balance has not been playtested by people; fog and effects are overlay approximations; enemy movement is grid-based with no navmesh.

@@ -11,9 +11,9 @@ const app = new App(canvas, {
   cell: { w: 8, h: 16 },
   sampleX: 2,
   contrast: 0.8,
-  exposure: 2.2,
+  exposure: 2.6,
   edgeThreshold: 0.12,
-  glow: 0.6,
+  glow: 0.85,
   vignette: 0.35,
 });
 
@@ -116,6 +116,24 @@ if (params.has('test')) {
     },
     setGod: (on: boolean) => {
       app.debugGod = on;
+    },
+    setSyncGpu: (on: boolean) => {
+      app.debugSyncGpu = on;
+    },
+    setQuality: (quality: 'low' | 'medium' | 'high', density: 'fine' | 'standard' | 'bold' = 'standard') => {
+      app.applySettings({ ...app.settings, quality, glyphDensity: density }, false);
+      return app.settings;
+    },
+    /** Frame timing samples and the canvas size, for the performance harness. */
+    frameStats: () => ({
+      samples: [...app.frameMs],
+      canvas: { w: app.canvas.width, h: app.canvas.height },
+      grid: { cols: app.ascii.cols, rows: app.ascii.rows, cell: app.ascii.devCell },
+    }),
+    /** Ends the current run as a win or a loss, through the same path the game uses. */
+    finish: (won: boolean) => {
+      app.finishRun(won);
+      return snapshot();
     },
     /** Presses or releases a key, as the browser would deliver it. */
     key: (code: string, down: boolean) => {

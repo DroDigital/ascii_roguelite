@@ -269,7 +269,7 @@ export class Battle {
           vz: Math.sin(angle) * QUILL.speed,
           life: QUILL.life,
           radius: 0.14,
-          damage: quillBoltDamage(this.mods) * (count > 1 ? 1 : 1),
+          damage: quillBoltDamage(this.mods),
           pierce: this.mods.quill.pierce,
         }),
       );
@@ -671,17 +671,25 @@ export class Battle {
     this.addEnemy(next.kind, spot.x, spot.z, next.gilded);
   }
 
-  /** The farthest spawn point from the player that keeps clear of other enemies. */
+  /**
+   * The spawn point to use next. Fair spawns are preferred: far from the player and
+   * clear of other enemies. If none qualifies, the farthest clear point is used, so
+   * a queued enemy can never be stranded and softlock the room.
+   */
   private pickSpawnPoint(): Vec2 | null {
-    const candidates = this.layout.spawns
-      .map((s) => ({ x: s.x + 0.5, z: s.y + 0.5, d: 0 }))
-      .map((p) => ({ ...p, d: Math.hypot(p.x - this.player.x, p.z - this.player.z) }))
-      .filter((p) => p.d >= 6)
+    const spots = this.layout.spawns
+      .map((s) => {
+        const x = s.x + 0.5;
+        const z = s.y + 0.5;
+        return { x, z, d: Math.hypot(x - this.player.x, z - this.player.z) };
+      })
       .sort((a, b) => b.d - a.d);
-    for (const c of candidates) {
-      if (this.aliveEnemies.every((e) => Math.hypot(e.x - c.x, e.z - c.z) >= 3)) return { x: c.x, z: c.z };
-    }
-    return null;
+    const clear = (c: Vec2): boolean => this.aliveEnemies.every((e) => Math.hypot(e.x - c.x, e.z - c.z) >= 3);
+    const fair = spots.find((c) => c.d >= 6 && clear(c));
+    if (fair) return fair;
+    const any = spots.find((c) => clear(c));
+    if (any) return any;
+    return this.aliveEnemies.length === 0 && spots.length > 0 ? spots[0] : null;
   }
 
   /** Pushes overlapping enemies apart so they do not stack. */

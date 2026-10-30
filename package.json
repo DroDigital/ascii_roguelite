@@ -7,9 +7,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "e2e": "node e2e/smoke.mjs",
+    "e2e": "node e2e/flows.mjs",
+    "autoplay": "node e2e/autoplay.mjs 42 1",
+    "shot": "node e2e/shot.mjs",
     "perf": "node e2e/perf.mjs"
   },
   "dependencies": {

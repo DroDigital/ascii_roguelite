@@ -84,7 +84,7 @@ export class Audio {
   }
 
   /** Oscillator with a pitch envelope and an exponential decay. */
-  private tone(opts: { type: OscillatorType; f0: number; f1?: number; t: number; dur: number; gain: number; bus?: 'sfx' | 'amb'; when?: number; filter?: { type: BiquadFilterType; f: number; q?: number } }): void {
+  private tone(opts: { type: OscillatorType; f0: number; f1?: number; dur: number; gain: number; bus?: 'sfx' | 'amb'; when?: number; filter?: { type: BiquadFilterType; f: number; q?: number } }): void {
     const ctx = this.ctx;
     const bus = this.bus;
     if (!ctx || !bus) return;
@@ -110,7 +110,6 @@ export class Audio {
     amp.connect(opts.bus === 'amb' ? bus.amb : bus.sfx);
     osc.start(start);
     osc.stop(start + opts.dur + 0.05);
-    void opts.t;
   }
 
   /** Filtered noise with a sweep, for breath, rush and air. */
@@ -139,7 +138,7 @@ export class Audio {
 
   /** Short click or snap. */
   private click(gain: number, f = 2400, when = 0): void {
-    this.tone({ type: 'square', f0: f, f1: f * 0.5, t: 0, dur: 0.03, gain, when, filter: { type: 'highpass', f: 800 } });
+    this.tone({ type: 'square', f0: f, f1: f * 0.5, dur: 0.03, gain, when, filter: { type: 'highpass', f: 800 } });
   }
 
   /** Cues for battle events. Called for every event as it is drained. */
@@ -149,52 +148,52 @@ export class Audio {
       case 'swing':
         if (ev.riposte) {
           this.whoosh({ dur: 0.22, f0: 1400, f1: 3600, q: 2, gain: 0.22 });
-          this.tone({ type: 'sine', f0: 1320, t: 0, dur: 0.3, gain: 0.05, when: 0.05 });
+          this.tone({ type: 'sine', f0: 1320, dur: 0.3, gain: 0.05, when: 0.05 });
         } else if (ev.heavy) {
           this.whoosh({ dur: 0.34, f0: 350, f1: 1500, q: 0.9, gain: 0.3 });
-          this.tone({ type: 'sawtooth', f0: 140, f1: 70, t: 0, dur: 0.3, gain: 0.05, filter: { type: 'lowpass', f: 500 } });
+          this.tone({ type: 'sawtooth', f0: 140, f1: 70, dur: 0.3, gain: 0.05, filter: { type: 'lowpass', f: 500 } });
         } else {
           this.whoosh({ dur: 0.16, f0: 900 + ev.index * 250, f1: 2400 + ev.index * 300, q: 1.6, gain: 0.18 });
         }
         break;
       case 'shot':
-        this.tone({ type: 'triangle', f0: 1400, f1: 700, t: 0, dur: 0.08, gain: 0.12 });
+        this.tone({ type: 'triangle', f0: 1400, f1: 700, dur: 0.08, gain: 0.12 });
         this.click(0.05, 3200);
         break;
       case 'enemyHurt':
         if (ev.heavy) {
-          this.tone({ type: 'sine', f0: 170, f1: 55, t: 0, dur: 0.22, gain: 0.32 });
+          this.tone({ type: 'sine', f0: 170, f1: 55, dur: 0.22, gain: 0.32 });
           this.click(0.12, 1800);
         } else {
-          this.tone({ type: 'sine', f0: 190, f1: 70, t: 0, dur: 0.12, gain: 0.18 });
+          this.tone({ type: 'sine', f0: 190, f1: 70, dur: 0.12, gain: 0.18 });
           this.click(0.06, 2200);
         }
         break;
       case 'armourBroken':
-        this.tone({ type: 'sine', f0: 2600, f1: 1900, t: 0, dur: 0.18, gain: 0.1 });
+        this.tone({ type: 'sine', f0: 2600, f1: 1900, dur: 0.18, gain: 0.1 });
         this.click(0.1, 4200);
         this.click(0.08, 3000, 0.04);
         break;
       case 'stagger':
-        this.tone({ type: 'sine', f0: 240, f1: 110, t: 0, dur: 0.16, gain: 0.16 });
+        this.tone({ type: 'sine', f0: 240, f1: 110, dur: 0.16, gain: 0.16 });
         break;
       case 'wallStun':
-        this.tone({ type: 'square', f0: 220, f1: 90, t: 0, dur: 0.4, gain: 0.12, filter: { type: 'lowpass', f: 700 } });
+        this.tone({ type: 'square', f0: 220, f1: 90, dur: 0.4, gain: 0.12, filter: { type: 'lowpass', f: 700 } });
         this.whoosh({ dur: 0.3, f0: 800, f1: 200, q: 0.8, gain: 0.2 });
         break;
       case 'enemyDied':
-        this.tone({ type: 'sawtooth', f0: 330, f1: 55, t: 0, dur: 0.55, gain: 0.12, filter: { type: 'lowpass', f: 900 } });
+        this.tone({ type: 'sawtooth', f0: 330, f1: 55, dur: 0.55, gain: 0.12, filter: { type: 'lowpass', f: 900 } });
         this.whoosh({ dur: 0.7, f0: 1600, f1: 300, q: 0.6, gain: 0.14 });
         break;
       case 'ignited':
         this.whoosh({ dur: 0.35, f0: 600, f1: 2200, q: 1.1, gain: 0.12 });
         break;
       case 'kindlingBlast':
-        this.tone({ type: 'sine', f0: 120, f1: 40, t: 0, dur: 0.6, gain: 0.35 });
+        this.tone({ type: 'sine', f0: 120, f1: 40, dur: 0.6, gain: 0.35 });
         this.whoosh({ dur: 0.5, f0: 2000, f1: 200, q: 0.7, gain: 0.25 });
         break;
       case 'telegraph':
-        this.telegraph(ev.enemy, ev.attack, ev.duration);
+        this.telegraph(ev.enemy, ev.duration);
         break;
       case 'attackActive':
         if (ev.attack === 'lunge' || ev.attack === 'charge' || ev.attack === 'triple-dash') {
@@ -202,31 +201,29 @@ export class Audio {
         }
         break;
       case 'ring':
-        this.tone({ type: 'sine', f0: 80, f1: 30, t: 0, dur: 0.6, gain: 0.45 });
+        this.tone({ type: 'sine', f0: 80, f1: 30, dur: 0.6, gain: 0.45 });
         this.whoosh({ dur: 0.5, f0: 600, f1: 120, q: 0.6, gain: 0.25 });
         break;
-      case 'sweepFx' as never:
-        break;
       case 'playerHurt':
-        this.tone({ type: 'sawtooth', f0: 110, f1: 80, t: 0, dur: 0.3, gain: 0.22, filter: { type: 'lowpass', f: 650 } });
-        this.tone({ type: 'sawtooth', f0: 117, f1: 84, t: 0, dur: 0.3, gain: 0.12, filter: { type: 'lowpass', f: 650 } });
+        this.tone({ type: 'sawtooth', f0: 110, f1: 80, dur: 0.3, gain: 0.22, filter: { type: 'lowpass', f: 650 } });
+        this.tone({ type: 'sawtooth', f0: 117, f1: 84, dur: 0.3, gain: 0.12, filter: { type: 'lowpass', f: 650 } });
         break;
       case 'playerDied':
-        this.tone({ type: 'sawtooth', f0: 220, f1: 36, t: 0, dur: 1.4, gain: 0.2, filter: { type: 'lowpass', f: 500 } });
+        this.tone({ type: 'sawtooth', f0: 220, f1: 36, dur: 1.4, gain: 0.2, filter: { type: 'lowpass', f: 500 } });
         break;
       case 'dodge':
         if (ev.phase === 'start') {
           this.whoosh({ dur: 0.2, f0: 300, f1: 3000, q: 0.9, gain: 0.22 });
-          this.tone({ type: 'sine', f0: 1200, t: 0, dur: 0.1, gain: 0.07, when: 0.02 });
+          this.tone({ type: 'sine', f0: 1200, dur: 0.1, gain: 0.07, when: 0.02 });
         }
         break;
       case 'pickup':
         if (ev.kind === 'shard') {
-          this.tone({ type: 'triangle', f0: 880, t: 0, dur: 0.12, gain: 0.1 });
-          this.tone({ type: 'triangle', f0: 1320, t: 0, dur: 0.16, gain: 0.1, when: 0.07 });
+          this.tone({ type: 'triangle', f0: 880, dur: 0.12, gain: 0.1 });
+          this.tone({ type: 'triangle', f0: 1320, dur: 0.16, gain: 0.1, when: 0.07 });
         } else {
-          this.tone({ type: 'sine', f0: 660, t: 0, dur: 0.6, gain: 0.12 });
-          this.tone({ type: 'sine', f0: 990, t: 0, dur: 0.5, gain: 0.05, when: 0.02 });
+          this.tone({ type: 'sine', f0: 660, dur: 0.6, gain: 0.12 });
+          this.tone({ type: 'sine', f0: 990, dur: 0.5, gain: 0.05, when: 0.02 });
         }
         break;
       case 'tear':
@@ -234,14 +231,14 @@ export class Audio {
         this.click(0.12, 5200);
         break;
       case 'fragmentLaunch':
-        this.tone({ type: 'square', f0: 1800, f1: 2600, t: 0, dur: 0.04, gain: 0.05 });
+        this.tone({ type: 'square', f0: 1800, f1: 2600, dur: 0.04, gain: 0.05 });
         break;
       case 'impact':
         if (ev.owner === 'player') this.click(0.05, 3600);
-        else this.tone({ type: 'sine', f0: 400, f1: 180, t: 0, dur: 0.1, gain: 0.1 });
+        else this.tone({ type: 'sine', f0: 400, f1: 180, dur: 0.1, gain: 0.1 });
         break;
       case 'spawnRune':
-        this.tone({ type: 'sine', f0: 300, f1: 620, t: 0, dur: 0.7, gain: 0.05 });
+        this.tone({ type: 'sine', f0: 300, f1: 620, dur: 0.7, gain: 0.05 });
         break;
       case 'hazardArmed':
         this.click(0.04, 1500);
@@ -261,7 +258,7 @@ export class Audio {
   }
 
   /** Each enemy kind has its own telegraph voice, so the ear knows what is coming. */
-  private telegraph(enemy: Enemy, attack: string, duration: number): void {
+  private telegraph(enemy: Enemy, duration: number): void {
     const last = this.lastTelegraph.get(enemy.id) ?? -1;
     if (this.ctx && this.ctx.currentTime - last < 0.2) return;
     this.lastTelegraph.set(enemy.id, this.ctx?.currentTime ?? 0);
@@ -270,29 +267,28 @@ export class Audio {
         for (let i = 0; i < 3; i++) this.click(0.08, 1900 + i * 180, i * 0.06);
         break;
       case 'acolyte':
-        this.tone({ type: 'sine', f0: 500, f1: 1000, t: 0, dur: Math.min(0.5, duration), gain: 0.1 });
+        this.tone({ type: 'sine', f0: 500, f1: 1000, dur: Math.min(0.5, duration), gain: 0.1 });
         break;
       case 'bulwark':
-        this.tone({ type: 'sawtooth', f0: 70, f1: 140, t: 0, dur: duration, gain: 0.1, filter: { type: 'lowpass', f: 320 } });
+        this.tone({ type: 'sawtooth', f0: 70, f1: 140, dur: duration, gain: 0.1, filter: { type: 'lowpass', f: 320 } });
         break;
       case 'elite':
-        this.tone({ type: 'sine', f0: 660, t: 0, dur: 1.1, gain: 0.12 });
-        this.tone({ type: 'sine', f0: 990, t: 0, dur: 0.9, gain: 0.05 });
+        this.tone({ type: 'sine', f0: 660, dur: 1.1, gain: 0.12 });
+        this.tone({ type: 'sine', f0: 990, dur: 0.9, gain: 0.05 });
         break;
       case 'boss':
-        this.tone({ type: 'sine', f0: 55, t: 0, dur: 1.4, gain: 0.25 });
-        this.tone({ type: 'sine', f0: 110, t: 0, dur: 1.2, gain: 0.08 });
+        this.tone({ type: 'sine', f0: 55, dur: 1.4, gain: 0.25 });
+        this.tone({ type: 'sine', f0: 110, dur: 1.2, gain: 0.08 });
         break;
     }
-    void attack;
   }
 
   private chime(freqs: number[]): void {
-    freqs.forEach((f, i) => this.tone({ type: 'triangle', f0: f, t: 0, dur: 0.6, gain: 0.12, when: i * 0.09 }));
+    freqs.forEach((f, i) => this.tone({ type: 'triangle', f0: f, dur: 0.6, gain: 0.12, when: i * 0.09 }));
   }
 
   private stinger(freqs: number[]): void {
-    freqs.forEach((f) => this.tone({ type: 'sawtooth', f0: f, t: 0, dur: 1.6, gain: 0.08, filter: { type: 'lowpass', f: 1200 } }));
+    freqs.forEach((f) => this.tone({ type: 'sawtooth', f0: f, dur: 1.6, gain: 0.08, filter: { type: 'lowpass', f: 1200 } }));
     this.whoosh({ dur: 1.2, f0: 120, f1: 1800, q: 0.7, gain: 0.2 });
   }
 
@@ -301,7 +297,7 @@ export class Audio {
   }
 
   onMend(): void {
-    this.tone({ type: 'sine', f0: 523, t: 0, dur: 1.2, gain: 0.14 });
+    this.tone({ type: 'sine', f0: 523, dur: 1.2, gain: 0.14 });
   }
 
   onRoomStart(kind: Kind): void {
@@ -314,7 +310,7 @@ export class Audio {
 
   onRunEnd(won: boolean): void {
     if (won) this.chime([523, 659, 784, 1047]);
-    else this.tone({ type: 'sawtooth', f0: 180, f1: 40, t: 0, dur: 1.6, gain: 0.14, filter: { type: 'lowpass', f: 600 } });
+    else this.tone({ type: 'sawtooth', f0: 180, f1: 40, dur: 1.6, gain: 0.14, filter: { type: 'lowpass', f: 600 } });
   }
 
   /**
@@ -381,8 +377,8 @@ export class Audio {
     const bell = (): void => {
       const t = window.setTimeout(() => {
         if (!this.ambience) return;
-        this.tone({ type: 'sine', f0: 392, t: 0, dur: 3.2, gain: 0.05, bus: 'amb' });
-        this.tone({ type: 'sine', f0: 588, t: 0, dur: 2.4, gain: 0.02, bus: 'amb', when: 0.02 });
+        this.tone({ type: 'sine', f0: 392, dur: 3.2, gain: 0.05, bus: 'amb' });
+        this.tone({ type: 'sine', f0: 588, dur: 2.4, gain: 0.02, bus: 'amb', when: 0.02 });
         bell();
       }, 22000 + Math.random() * 18000);
       timers.push(t);

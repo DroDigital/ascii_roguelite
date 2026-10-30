@@ -72,6 +72,8 @@ export class App {
   debugTopDown = false;
   /** Debug only: the player cannot die. Used by the end-to-end tests to reach the boss. */
   debugGod = false;
+  /** Debug only: wait for GPU work to finish each frame, so frame timing includes it. */
+  debugSyncGpu = false;
   private acc = 0;
   private hitStop = 0;
   private lastTs = 0;
@@ -443,6 +445,7 @@ export class App {
     const snap = this.input.snapshot();
     this.route(snap, dt);
     this.render(dt);
+    if (this.debugSyncGpu) this.ascii.gl.getContext().finish();
     this.frameMs.push(performance.now() - t0);
     if (this.frameMs.length > 600) this.frameMs.shift();
     requestAnimationFrame((next) => this.frame(next));
@@ -545,7 +548,7 @@ export class App {
 
   private handleBattleEvents(events: BattleEvent[]): void {
     for (const ev of events) {
-      this.effects.onEvent(ev, this.layout as Layout);
+      this.effects.onEvent(ev);
       this.audio.onBattleEvent(ev);
       switch (ev.type) {
         case 'enemyDied':
@@ -556,6 +559,13 @@ export class App {
           break;
         case 'doorEntered':
           if (this.state === 'run') this.advanceThrough(ev.exitIndex);
+          break;
+        case 'dodge':
+          if (ev.phase === 'start' && !this.settings.reducedMotion) {
+            // The roll widens the view and tips it briefly, in the direction of the dodge.
+            this.view.widen(0.8 * this.settings.effects);
+            this.view.kick(0, 0, 0.1 * this.settings.screenShake * (this.strafe >= 0 ? -1 : 1));
+          }
           break;
         case 'playerDied':
           this.hud.flash('The ink takes you', 'ember', 2.2);

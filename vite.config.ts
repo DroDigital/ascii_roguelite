@@ -11,5 +11,7 @@ export default defineConfig({
   build: {
     target: 'es2022',
     sourcemap: true,
+    // Three.js alone is roughly 0.5 MB minified; the warning is expected for this slice.
+    chunkSizeWarningLimit: 1000,
   },
 });

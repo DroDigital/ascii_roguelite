@@ -7,7 +7,7 @@ import type { Projectile } from '../sim/projectiles';
 import type { Fragment } from '../sim/tear';
 import type { Rng } from '../core/rng';
 import { FirstPersonView } from '../sim/fpView';
-import type { PlayerState } from '../sim/player';
+import { type PlayerState, PLAYER_TUNING } from '../sim/player';
 import { type Layout, T } from '../world/tiles';
 import { hash2 } from '../core/rng';
 
@@ -88,9 +88,8 @@ interface DistortFx {
 const DEBRIS = ['*', '+', '.', "'", 'x', ':', '%'];
 const STREAM = ['|', '!', ':', '.', ',', ';', "'", ']', '1'];
 
-/** Converts a glyph character to its atlas index: the overlay stores indices, so effects pick chars. */
+/** The glyph that traces a curve whose tangent is `angle`, folded to four directions. */
 function glyphFor(angle: number): string {
-  // Tangent of a curve drawn on the floor, folded to four directions.
   const a = ((angle % Math.PI) + Math.PI) % Math.PI;
   if (a < Math.PI / 8 || a >= (7 * Math.PI) / 8) return '-';
   if (a < (3 * Math.PI) / 8) return '\\';
@@ -177,8 +176,7 @@ export class Effects {
   }
 
   /** Handles one battle event. Call for every event the battle drains. */
-  onEvent(ev: BattleEvent, layout: Layout): void {
-    void layout;
+  onEvent(ev: BattleEvent): void {
     switch (ev.type) {
       case 'swing':
         this.arcs.push({
@@ -416,6 +414,21 @@ export class Effects {
       }
     }
 
+    // Dodge invulnerability: a cyan ghost frame around the view while the window is open.
+    const p = battle.player;
+    const iframes = p.dodging && p.dodgeT >= PLAYER_TUNING.dodge.iframeStart && p.dodgeT <= PLAYER_TUNING.dodge.iframeEnd;
+    if (iframes) {
+      const a = 0.22 * this.settings.intensity + 0.1 * Math.sin(now * 30);
+      for (let x = 0; x < ov.cols; x++) {
+        ov.put(x, 1, '.', PAL.cyan, a);
+        ov.put(x, ov.rows - 2, '.', PAL.cyan, a);
+      }
+      for (let y = 0; y < ov.rows; y++) {
+        ov.put(1, y, '.', PAL.cyan, a);
+        ov.put(ov.cols - 2, y, '.', PAL.cyan, a);
+      }
+    }
+
     // Edge flash on damage: a frame of ember glyphs.
     if (this.edgeFlash > 0) {
       const a = this.edgeFlash * 2 * (this.settings.intensity);
@@ -539,6 +552,22 @@ export class Effects {
       }
     }
 
+    // Off-screen attackers: an ember marker on the screen edge, pointing toward each enemy
+    // that is hunting the player from outside the view.
+    const halfW = ov.cols / 2;
+    const halfH = ov.rows / 2;
+    for (const e of battle.enemies) {
+      if (e.stage === 'dead' || e.stage === 'spawn') continue;
+      const v = this.scratch.set(e.x, 1.1, e.z).project(cam);
+      const onScreen = v.z <= 1 && Math.abs(v.x) <= 0.97 && Math.abs(v.y) <= 0.97;
+      if (onScreen) continue;
+      const ang = Math.atan2(v.y, v.x);
+      const ex = Math.round(halfW + Math.cos(ang) * (halfW - 2));
+      const ey = Math.round(halfH + Math.sin(ang) * (halfH - 2));
+      const glyph = Math.abs(Math.cos(ang)) > Math.abs(Math.sin(ang)) ? (Math.cos(ang) > 0 ? '>' : '<') : Math.sin(ang) > 0 ? '^' : 'v';
+      ov.put(Math.max(1, Math.min(ov.cols - 2, ex)), Math.max(1, Math.min(ov.rows - 2, ey)), glyph, PAL.ember, 0.55 + 0.35 * Math.sin(now * 10));
+    }
+
     // Fragments orbiting the player.
     for (const f of battle.fragments) {
       const pulse = 0.7 + 0.3 * Math.sin(now * 9 + f.id);
@@ -598,4 +627,3 @@ export class Effects {
   }
 }
 
-export const FX_TEXT = { glyphFor, STREAM, DEBRIS };

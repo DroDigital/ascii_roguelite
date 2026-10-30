@@ -154,3 +154,51 @@ function doorTile(layout: Layout, role: 'entry' | 'exit', exitIndex: number): [n
   if (!d) throw new Error('no such door');
   return [d.x, d.y];
 }
+
+describe('quill', () => {
+  it('fires bolts while held and damages an enemy in front', () => {
+    const layout = generateLayout('hall-of-hooks', mulberry32(31), { entrySide: 'W', exitCount: 2 });
+    const b = new Battle({ layout, rng: mulberry32(310), mods: baseMods(), weapon: 'quill' });
+    const husk = b.addEnemy('husk', b.player.x + 4, b.player.z);
+    settle(b);
+    const start = husk.hp;
+    runSeconds(b, 1.5, () => aimedAt(b, husk, { fireHeld: true }));
+    expect(husk.hp).toBeLessThan(start);
+    expect(b.events.length + b.drain().length).toBeGreaterThan(0);
+  });
+});
+
+describe('boss', () => {
+  it('turns from Seal Keeper to Unbound below half health, dropping its armour', () => {
+    const layout = generateLayout('boss-arena', mulberry32(41), { entrySide: 'W', exitCount: 0 });
+    const b = new Battle({ layout, rng: mulberry32(410), mods: baseMods(), weapon: 'glaive' });
+    b.addEnemy('boss', layout.bossSpawn!.x + 0.5, layout.bossSpawn!.y + 0.5);
+    const boss = b.enemies[0] as unknown as { phaseTwo: boolean; armor: number; coreExposed: boolean; hp: number; stage: string };
+    settle(b);
+    expect(boss.phaseTwo).toBe(false);
+    expect(boss.armor).toBe(3);
+    boss.hp = 250;
+    runSeconds(b, 0.1, () => idle());
+    expect(boss.phaseTwo).toBe(true);
+    expect(boss.armor).toBe(0);
+    expect(boss.coreExposed).toBe(true);
+    expect(boss.stage).toBe('transition');
+    const events = b.drain();
+    expect(events.some((e) => e.type === 'bossPhase')).toBe(true);
+  });
+});
+
+describe('spawning', () => {
+  it('never strands a queued enemy when the room is otherwise empty', () => {
+    const b = makeBattle(61, 'choir');
+    // Stand on top of every spawn point so none passes the distance rule.
+    for (const s of b.layout.spawns) {
+      b.player.x = s.x + 0.5;
+      b.player.z = s.y + 0.5;
+    }
+    b.queueWave(['husk']);
+    runSeconds(b, 0.1, () => idle());
+    expect(b.enemies.length).toBe(1);
+    expect(b.pending.length).toBe(0);
+  });
+});
