@@ -103,9 +103,13 @@ export class AsciiRenderer {
     this.quadScene.add(this.quad);
   }
 
-  /** Builds the glyph atlas. Must be awaited once before the first resize. */
+  /**
+   * Waits for the glyph font. An atlas built before it arrived drew with a fallback face,
+   * so it is dropped here and the next resize rebuilds it.
+   */
   async init(): Promise<void> {
     await ensureGlyphFont();
+    this.atlasKey = '';
   }
 
   get config(): AsciiConfig {

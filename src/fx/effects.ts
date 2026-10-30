@@ -113,6 +113,7 @@ export class Effects {
   private edgeFlash = 0;
   private chargeFlash = 0;
   private readonly scratch = new THREE.Vector3();
+  private readonly lookScratch = new THREE.Vector3();
   /** Requests picked up by the app each frame. */
   hitStopRequest = 0;
   shakeRequest = 0;
@@ -556,12 +557,16 @@ export class Effects {
     // that is hunting the player from outside the view.
     const halfW = ov.cols / 2;
     const halfH = ov.rows / 2;
+    const look = cam.getWorldDirection(this.lookScratch);
     for (const e of battle.enemies) {
       if (e.stage === 'dead' || e.stage === 'spawn') continue;
       const v = this.scratch.set(e.x, 1.1, e.z).project(cam);
-      const onScreen = v.z <= 1 && Math.abs(v.x) <= 0.97 && Math.abs(v.y) <= 0.97;
+      // Behind the camera, projection flips both axes and nothing there is on screen.
+      const behind = (e.x - cam.position.x) * look.x + (1.1 - cam.position.y) * look.y + (e.z - cam.position.z) * look.z < 0;
+      const onScreen = !behind && v.z <= 1 && Math.abs(v.x) <= 0.97 && Math.abs(v.y) <= 0.97;
       if (onScreen) continue;
-      const ang = Math.atan2(v.y, v.x);
+      const flip = behind ? -1 : 1;
+      const ang = Math.atan2(flip * v.y, flip * v.x);
       const ex = Math.round(halfW + Math.cos(ang) * (halfW - 2));
       const ey = Math.round(halfH + Math.sin(ang) * (halfH - 2));
       const glyph = Math.abs(Math.cos(ang)) > Math.abs(Math.sin(ang)) ? (Math.cos(ang) > 0 ? '>' : '<') : Math.sin(ang) > 0 ? '^' : 'v';
@@ -623,6 +628,11 @@ export class Effects {
       const k = this.settings.motion * this.settings.intensity;
       view.kick(this.kickRequest.pitch * k, this.kickRequest.yaw * k, this.kickRequest.roll * k);
       this.kickRequest = null;
+    }
+    // The view scales shake by the screen-shake setting, and to zero under reduced motion.
+    if (this.shakeRequest > 0) {
+      view.shake(this.shakeRequest);
+      this.shakeRequest = 0;
     }
   }
 }

@@ -109,7 +109,7 @@ function buildHusk(): View {
   head.position.set(0, 1.0, -0.04);
   torso.add(head);
   head.add(part(geo.unitSphere, body, [0, 0.12, 0], [0.19, 0.22, 0.19]));
-  const eyeMat = mats.ember();
+  const eyeMat = cloneMat(mats.ember());
   head.add(part(geo.unitSphere, eyeMat, [-0.07, 0.14, -0.15], [0.04, 0.04, 0.04]));
   head.add(part(geo.unitSphere, eyeMat, [0.07, 0.14, -0.15], [0.04, 0.04, 0.04]));
   const armL = new THREE.Group();
@@ -162,7 +162,7 @@ function buildBulwark(gilded: boolean): View {
   head.position.set(0, 1.18, 0.04);
   torso.add(head);
   head.add(part(geo.unitBox, body, [0, 0.12, 0], [0.4, 0.34, 0.38]));
-  const eyeMat = mats.ember();
+  const eyeMat = cloneMat(mats.ember());
   head.add(part(geo.unitBox, eyeMat, [0, 0.14, -0.2], [0.26, 0.05, 0.04]));
   if (gilded) {
     for (let i = -1; i <= 1; i++) {
@@ -220,7 +220,7 @@ function buildAcolyte(): View {
   head.position.set(0, 1.85, 0);
   torso.add(head);
   head.add(part(geo.unitSphere, mats.robe(), [0, 0.1, 0], [0.2, 0.24, 0.2]));
-  const eyeMat = mats.cyan();
+  const eyeMat = cloneMat(mats.cyan());
   head.add(part(geo.unitSphere, eyeMat, [0, 0.08, -0.14], [0.05, 0.05, 0.05]));
   const armL = new THREE.Group();
   armL.position.set(-0.2, 1.45, 0);
@@ -292,7 +292,7 @@ function buildBoss(): View {
   head.position.set(0, 2.45, 0);
   torso.add(head);
   head.add(part(geo.unitSphere, mats.robe(), [0, 0.08, 0], [0.22, 0.26, 0.22]));
-  const eyeMat = mats.ember();
+  const eyeMat = cloneMat(mats.ember());
   head.add(part(geo.unitSphere, eyeMat, [0, 0.08, -0.17], [0.05, 0.05, 0.05]));
   const book = new THREE.Group();
   book.position.set(0, 1.45, -0.32);
@@ -462,7 +462,7 @@ export class EnemyView {
     this.root.traverse((o) => {
       if (o instanceof THREE.Mesh) {
         if (!(o.material instanceof THREE.Material)) return;
-        if (!this.v.flash.includes(o.material as THREE.MeshLambertMaterial)) return;
+        if (!this.v.flash.includes(o.material as THREE.MeshLambertMaterial) && !this.v.eyes.includes(o.material)) return;
         o.material.dispose();
       }
     });

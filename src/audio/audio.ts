@@ -113,7 +113,7 @@ export class Audio {
   }
 
   /** Filtered noise with a sweep, for breath, rush and air. */
-  private whoosh(opts: { dur: number; f0: number; f1: number; q?: number; gain: number; type?: BiquadFilterType; when?: number }): void {
+  private whoosh(opts: { dur: number; f0: number; f1: number; q?: number; gain: number; type?: BiquadFilterType; when?: number; bus?: 'amb' | 'sfx' }): void {
     const ctx = this.ctx;
     const bus = this.bus;
     if (!ctx || !bus || !this.noise) return;
@@ -131,7 +131,7 @@ export class Audio {
     amp.gain.exponentialRampToValueAtTime(0.0001, start + opts.dur);
     src.connect(f);
     f.connect(amp);
-    amp.connect(bus.sfx);
+    amp.connect(opts.bus === 'amb' ? bus.amb : bus.sfx);
     src.start(start, Math.random() * 0.5);
     src.stop(start + opts.dur + 0.05);
   }
@@ -368,7 +368,7 @@ export class Audio {
     const schedule = (): void => {
       const rustle = window.setTimeout(() => {
         if (!this.ambience) return;
-        this.whoosh({ dur: 0.5, f0: 4000, f1: 1200, q: 2.5, gain: 0.05 });
+        this.whoosh({ dur: 0.5, f0: 4000, f1: 1200, q: 2.5, gain: 0.05, bus: 'amb' });
         schedule();
       }, 5000 + Math.random() * 7000);
       timers.push(rustle);

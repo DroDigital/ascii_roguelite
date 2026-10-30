@@ -32,7 +32,8 @@ export interface InputSnapshot {
   anyJust: boolean;
 }
 
-const PREVENT = new Set(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab']);
+// The game handles these keys itself. Left to the browser, Enter would also click the focused button.
+const PREVENT = new Set(['Space', 'Enter', 'NumpadEnter', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab']);
 
 /**
  * Collects keyboard, mouse and pointer-lock state on a target element and

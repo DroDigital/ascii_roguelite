@@ -80,6 +80,28 @@ const gates = await page.evaluate(
     ),
 );
 check('locked doors show their gates', gates.locked && gates.visible > 0, `locked ${gates.locked}, visible gates ${gates.visible}`);
+// A hit shakes the view.
+const frames = () => page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+await page.evaluate(() => {
+  const b = window.vellum.app.battle;
+  b.hurtPlayer(5, b.player.x, b.player.z, 0);
+});
+await frames();
+check('a hit shakes the view', (await page.evaluate(() => window.vellum.app.view.shakeLevel)) > 0);
+// Overlay cells holding the arrow glyphs < > ^ v (atlas indices 28, 30, 62, 86).
+const arrows = () =>
+  page.evaluate(() => {
+    const { cols, rows } = window.vellum.frameStats().grid;
+    const data = window.vellum.app.ascii.overlay.data;
+    const found = [];
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const i = (y * cols + x) * 4;
+        if (data[i + 2] > 0 && [28, 30, 62, 86].includes(data[i])) found.push({ x, y });
+      }
+    }
+    return { cols, found };
+  });
 
 // Finish the run as a loss, then restart and confirm the Quill is now unlocked.
 await page.evaluate(() => window.vellum.finish(false));
@@ -108,6 +130,32 @@ const persisted = await page.evaluate(() => window.vellum.state().settings.contr
 check('settings persist across a reload', Math.abs(persisted - 1.3) < 0.01, `contrast ${persisted}`);
 const progress = await page.evaluate(() => window.vellum.state().progress);
 check('progress persists across a reload', progress.runs >= 1, `runs ${progress.runs}`);
+
+// Enter after a mouse click: the clicked toggle keeps its new value, so the browser did not click it again.
+await page.getByRole('button', { name: 'Settings' }).click();
+const hitStop = page.locator('.setting', { has: page.locator('.name', { hasText: 'Hit-stop' }) }).locator('button.toggle');
+await hitStop.click();
+const clicked = await page.evaluate(() => window.vellum.state().settings.hitStop);
+await page.keyboard.press('Enter');
+await page.waitForTimeout(600);
+const afterEnter = await page.evaluate(() => window.vellum.state().settings.hitStop);
+check('Enter after a click leaves the clicked setting alone', afterEnter === clicked, `clicked ${clicked}, after Enter ${afterEnter}`);
+
+// An enemy hunting from behind the player gets a marker on its own side. The nave holds no other enemies,
+// so every marker is this one. The player moves to the middle of the room, where the floor is open.
+await page.evaluate(() => window.vellum.startRun(42));
+await page.evaluate(() => {
+  const app = window.vellum.app;
+  const b = app.battle;
+  const yaw = app.view.yaw;
+  b.player.x = Math.floor(b.layout.w / 2) + 0.5;
+  b.player.z = Math.floor(b.layout.h / 2) + 0.5;
+  b.addEnemy('husk', b.player.x + 4 * Math.sin(yaw) + 2 * Math.cos(yaw), b.player.z + 4 * Math.cos(yaw) - 2 * Math.sin(yaw));
+});
+await page.evaluate(() => window.vellum.advance(1.2));
+await frames();
+const markers = await arrows();
+check('a marker for an enemy behind the player sits on its side', markers.found.some((p) => p.x > markers.cols / 2), JSON.stringify(markers.found));
 
 check('no console errors or page exceptions', errors.length === 0, errors.slice(0, 3).join(' | '));
 for (const r of results) console.log(`${r.ok ? 'PASS' : 'FAIL'}  ${r.name}${r.detail ? `  (${r.detail})` : ''}`);
