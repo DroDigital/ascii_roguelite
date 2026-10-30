@@ -1,0 +1,671 @@
+/* VELLUM interface. Colour tokens follow the game's palette: ivory is the world,
+   ember is danger, amber is resources, cyan is abilities, ash is inactive. */
+:root {
+  --ink: #07070a;
+  --ivory: #efe6cf;
+  --ivory-dim: #b9b19a;
+  --ember: #ff5a3c;
+  --amber: #ffb84a;
+  --cyan: #5fe6e0;
+  --ash: #6b6860;
+  --panel: rgba(7, 7, 10, 0.88);
+  --line: rgba(239, 230, 207, 0.22);
+  --font: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+}
+
+:root[data-theme='light'] {
+  /* The game is dark by design. The light token set only tints the menu text for high-contrast users. */
+  --ivory: #fff8e6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--ink);
+  color: var(--ivory);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.ui-root {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ui-root > * {
+  pointer-events: none;
+}
+
+/* HUD -------------------------------------------------------------------- */
+.hud {
+  position: absolute;
+  inset: 0;
+}
+
+.hud-tl {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  width: min(300px, calc(100vw - 32px));
+}
+
+.hud-br {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.hp {
+  margin-bottom: 8px;
+}
+
+.hp-text {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.9);
+}
+
+.bar {
+  height: 10px;
+  background: rgba(239, 230, 207, 0.12);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--ivory);
+  transition: width 0.12s linear;
+}
+
+.bar-fill.low {
+  background: var(--ember);
+}
+
+.hud.hurt .hp-bar {
+  border-color: var(--ember);
+}
+
+.shards {
+  color: var(--amber);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.stage {
+  color: var(--ivory-dim);
+  font-size: 13px;
+  margin-bottom: 8px;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.9);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.chip {
+  font-size: 12px;
+  border: 1px solid var(--line);
+  padding: 1px 6px;
+  color: var(--ivory-dim);
+  background: rgba(7, 7, 10, 0.6);
+}
+
+.weapon {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.9);
+}
+
+.weapon-name {
+  font-weight: 600;
+}
+
+.weapon-keys {
+  font-size: 12px;
+  color: var(--ivory-dim);
+}
+
+.tear {
+  position: relative;
+  width: 74px;
+  height: 74px;
+}
+
+.tear-ring {
+  width: 74px;
+  height: 74px;
+  transform: rotate(-90deg);
+}
+
+.ring-track,
+.ring-fill {
+  fill: none;
+  stroke-width: 4;
+}
+
+.ring-track {
+  stroke: rgba(239, 230, 207, 0.12);
+}
+
+.ring-fill {
+  stroke: var(--cyan);
+  stroke-linecap: butt;
+  transition: stroke-dasharray 0.05s linear;
+}
+
+.ring-fill.full {
+  stroke: var(--ivory);
+}
+
+.tear-label {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cyan);
+  letter-spacing: 0.08em;
+}
+
+.dodge {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  min-height: 12px;
+}
+
+.pip {
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--cyan);
+  display: inline-block;
+}
+
+.pip.on {
+  background: var(--cyan);
+}
+
+.dodge.iframes .pip {
+  box-shadow: 0 0 10px var(--cyan);
+}
+
+.boss {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(560px, calc(100vw - 32px));
+  text-align: center;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.9);
+}
+
+.boss-name {
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.boss-bar .bar-fill {
+  background: var(--ivory);
+}
+
+.boss.phase-two .boss-bar .bar-fill {
+  background: var(--ember);
+}
+
+.boss-pips {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.boss-pips .pip.armour {
+  border-color: var(--cyan);
+}
+
+.banner {
+  position: absolute;
+  left: 50%;
+  bottom: 96px;
+  transform: translateX(-50%);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-align: center;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.95);
+  white-space: nowrap;
+}
+
+.banner.tone-ember {
+  color: var(--ember);
+}
+
+.banner.tone-cyan {
+  color: var(--cyan);
+}
+
+.banner.tone-amber {
+  color: var(--amber);
+}
+
+.prompt {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  transform: translateX(-50%);
+  color: var(--ivory);
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.95);
+  font-weight: 600;
+}
+
+.labels {
+  position: absolute;
+  inset: 0;
+}
+
+.door-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  translate: -50% -100%;
+  text-align: center;
+  white-space: nowrap;
+  padding: 4px 8px;
+  background: rgba(7, 7, 10, 0.72);
+  border: 1px solid var(--line);
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.9);
+}
+
+.door-title {
+  font-weight: 600;
+  color: var(--ivory);
+}
+
+.door-sub {
+  font-size: 12px;
+  color: var(--ivory-dim);
+}
+
+.stats {
+  position: absolute;
+  left: 16px;
+  bottom: 12px;
+  font-size: 12px;
+  color: var(--ivory-dim);
+}
+
+/* Screens ---------------------------------------------------------------- */
+.screens {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: radial-gradient(ellipse at center, rgba(7, 7, 10, 0.55), rgba(7, 7, 10, 0.92));
+  pointer-events: auto;
+  overflow-y: auto;
+}
+
+.screens .panel {
+  display: none;
+  width: min(760px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 24px;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+}
+
+.screens .panel.active {
+  display: block;
+}
+
+.screens .panel.narrow {
+  width: min(480px, 100%);
+}
+
+.screens .panel.wide {
+  width: min(920px, 100%);
+}
+
+.screens h2 {
+  margin: 0 0 12px;
+  font-size: 22px;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+.screens h2.win {
+  color: var(--amber);
+}
+
+.screens h2.loss {
+  color: var(--ember);
+}
+
+.screens h3 {
+  margin: 18px 0 8px;
+  font-size: 15px;
+  color: var(--ivory-dim);
+  letter-spacing: 0.06em;
+}
+
+.title-mark {
+  font-size: 56px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  color: var(--ivory);
+  text-shadow: 0 0 22px rgba(239, 230, 207, 0.25);
+}
+
+.title-sub,
+.title-stats,
+.hint,
+.summary,
+.unlocked,
+.combo-note {
+  color: var(--ivory-dim);
+  margin: 8px 0;
+}
+
+.title-stats {
+  color: var(--amber);
+}
+
+.combo-note {
+  color: var(--cyan);
+  margin-top: 14px;
+}
+
+.unlocked {
+  color: var(--amber);
+}
+
+.label {
+  margin: 14px 0 6px;
+  color: var(--ivory-dim);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+  max-width: 320px;
+}
+
+.menu.row-menu {
+  flex-direction: row;
+  flex-wrap: wrap;
+  max-width: none;
+  justify-content: flex-start;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.btn,
+.choice,
+.card,
+.seg,
+.toggle {
+  font: inherit;
+  color: var(--ivory);
+  background: rgba(239, 230, 207, 0.04);
+  border: 1px solid var(--line);
+  padding: 10px 14px;
+  cursor: pointer;
+  text-align: left;
+  pointer-events: auto;
+}
+
+.btn:hover,
+.choice:hover,
+.card:hover,
+.seg:hover,
+.toggle:hover,
+.btn.focus,
+.choice.focus,
+.card.focus {
+  border-color: var(--ivory);
+  background: rgba(239, 230, 207, 0.1);
+}
+
+.btn:focus-visible,
+.choice:focus-visible,
+.card:focus-visible,
+.seg:focus-visible,
+.toggle:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.btn.primary {
+  border-color: var(--ivory);
+}
+
+.btn.danger {
+  border-color: var(--ember);
+  color: var(--ember);
+}
+
+.choice {
+  flex: 1 1 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 84px;
+}
+
+.choice span {
+  color: var(--ivory-dim);
+  font-size: 13px;
+}
+
+.choice.selected {
+  border-color: var(--amber);
+  box-shadow: inset 0 0 0 1px var(--amber);
+}
+
+.choice.locked {
+  color: var(--ash);
+  border-style: dashed;
+}
+
+.choice.locked span {
+  color: var(--ash);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 220px;
+  padding: 14px;
+}
+
+.card strong {
+  font-size: 17px;
+}
+
+.card-key {
+  align-self: flex-start;
+  border: 1px solid var(--line);
+  padding: 0 6px;
+  font-size: 12px;
+  color: var(--ivory-dim);
+}
+
+.card-tag {
+  font-size: 12px;
+  color: var(--ivory-dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.card-text {
+  color: var(--ivory);
+  font-size: 14px;
+}
+
+.card-trade {
+  margin-top: auto;
+  color: var(--ember);
+  font-size: 13px;
+}
+
+.card.tag-glaive .card-tag {
+  color: var(--ivory);
+}
+
+.card.tag-quill .card-tag,
+.card.tag-tear .card-tag,
+.card.tag-dodge .card-tag {
+  color: var(--cyan);
+}
+
+.card.rare {
+  border-color: var(--amber);
+}
+
+.card.rare .card-tag {
+  color: var(--amber);
+}
+
+.settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 12px 24px;
+}
+
+.setting {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 34px;
+}
+
+.setting .name {
+  flex: 1 1 auto;
+  color: var(--ivory-dim);
+}
+
+.setting input[type='range'] {
+  flex: 0 1 150px;
+  accent-color: var(--ivory);
+}
+
+.setting .value {
+  width: 42px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.segmented {
+  display: flex;
+  gap: 4px;
+}
+
+.seg {
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+.seg.on,
+.toggle.on {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+.toggle {
+  min-width: 64px;
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+.codex {
+  display: grid;
+  gap: 6px;
+  max-height: 46vh;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.codex .entry {
+  color: var(--ash);
+  font-size: 14px;
+}
+
+.codex .entry.seen {
+  color: var(--ivory-dim);
+}
+
+.codex .entry.seen strong {
+  color: var(--ivory);
+}
+
+.controls {
+  display: grid;
+  gap: 6px;
+  color: var(--ivory-dim);
+}
+
+/* Accessibility ---------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .bar-fill,
+  .ring-fill {
+    transition: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .hud-tl {
+    width: calc(100vw - 32px);
+  }
+
+  .title-mark {
+    font-size: 40px;
+  }
+
+  .screens .panel {
+    padding: 18px;
+  }
+
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}
